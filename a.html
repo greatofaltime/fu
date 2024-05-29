@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>두현승 시뮬레이터</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+        #game {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        #game img {
+            max-width: 100%;
+            border-radius: 8px;
+        }
+        #game p {
+            font-size: 18px;
+            color: #333;
+        }
+        .choice {
+            margin: 10px 0;
+        }
+        .choice button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        .choice button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div id="game">
+        <h1>두현승 시뮬레이터</h1>
+        <img id="scene-image" src="" alt="Scene Image">
+        <p id="scene-text"></p>
+        <div id="choices"></div>
+        <p id="affection">호감도 - 친구: 0</p>
+        <p id="current-date-time"></p>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js"></script>
+    <script>
+        // Firebase 설정
+        var firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID",
+            databaseURL: "YOUR_DATABASE_URL"
+        };
+        firebase.initializeApp(firebaseConfig);
+        
+        // 호감도 초기값 설정
+        var affection = {
+            friend: 0
+        };
+
+        // Firebase Realtime Database 연결
+        var db = firebase.database();
+
+        // 게임 데이터
+        const gameData = {
+            scenes: {
+                // 각 장면의 정보 입력
+            },
+            events: [
+                { date: "2024-05-30", description: "오늘은 특별한 이벤트가 있습니다!" },
+                { date: "2024-06-01", description: "오늘은 무슨 일이 일어날까요?" }
+            ]
+        };
+
+        // 게임 시작
+        function startGame() {
+            // 이미 오늘 플레이한 경우
+            if (isAlreadyPlayedToday()) {
+                alert("오늘 이미 플레이했습니다. 내일 다시 시도하세요.");
+                return;
+            }
+
+            checkDateReset();
+            showScene("start");
+            displayCurrentDateTime();
+            setInterval(displayCurrentDateTime, 1000); // 1초마다 현재 날짜와 시간 업데이트
+            displayEventForToday();
+        }
+
+        // 날짜 확인 및 초기화
+        function checkDateReset() {
+            const currentDate = new Date().toLocaleDateString();
+            const lastPlayedDate = localStorage.getItem("lastPlayedDate");
+            if (lastPlayedDate !== currentDate) {
+                localStorage.setItem("lastPlayedDate", currentDate);
+                resetAffection(); // 호감도 초기화
+            }
+        }
+
+        // 이미 오늘 플레이했는지 확인
+        function isAlreadyPlayedToday() {
+            const lastPlayedDate = localStorage.getItem("lastPlayedDate");
+            const currentDate = new Date().toLocaleDateString();
+            return lastPlayedDate === currentDate;
+        }
+
+        // 호감도 초기화
+        function resetAffection() {
+            affection = { friend: 0 };
+            document.getElementById('affection').textContent = `호감도 - 친구: ${affection.friend}`;
+        }
+
+        // 현재 날짜 및 시간 표시
+        function displayCurrentDateTime() {
+            const now = new Date();
+            const formattedDateTime = now.toLocaleString('ko-KR', {
+                dateStyle: 'full',
+                timeStyle: 'medium'
+            });
+            document.getElementById('current-date-time').textContent = formattedDateTime;
+        }
+
+        // 오늘의 이벤트 표시
+        function displayEventForToday() {
+            const currentDate = new Date().toLocaleDateString();
+            for (const event of gameData.events) {
+                if (event.date === currentDate) {
+                    alert(event.description);
+                    break;
+                }
+            }
+        }
+
+        // 장면 표시
+        function showScene(sceneKey) {
+            const scene = gameData.scenes[sceneKey];
+            document.getElementById('scene-image').src = scene.image;
+            document.getElementById('scene-text').textContent = scene.text;
+
+            const choicesDiv = document.getElementById('choices');
+            choicesDiv.innerHTML = '';
+            scene.choices.forEach(choice => {
+                const button = document.createElement('button');
+                button.textContent = choice.text;
+                button.onclick = () => {
+                    updateAffection(choice.affectionChange);
+                    showScene(choice.nextScene);
+                };
+                choicesDiv.appendChild(button);
+            });
+        }
+
+        // 호감도 업데이트
+        function updateAffection(affectionChange) {
+            for (const character in affectionChange) {
+                affection[character] += affectionChange[character];
+            }
+            document.getElementById('affection').textContent = `호감도 - 친구: ${affection.friend}`;
+        }
+
+        startGame();
+    </script>
+</body>
+</html>
