@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>두현승 시뮬레이터</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+        #game {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        #game img {
+            max-width: 100%;
+            border-radius: 8px;
+        }
+        #game p {
+            font-size: 18px;
+            color: #333;
+        }
+        .choice {
+            margin: 10px 0;
+        }
+        .choice button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        .choice button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div id="game">
+        <h1>두현승 시뮬레이터</h1>
+        <img id="scene-image" src="1.jpg" alt="Scene Image">
+        <p id="scene-text"></p>
+        <div id="choices"></div>
+        <p id="affection">호감도 - 친구: 0</p>
+        <p id="current-date-time"></p>
+    </div>
+
+    <script>
+        const gameData = {
+            events: [
+                { 
+                    date: "2024-05-29", 
+                    description: "음?",
+                    scene: "1",
+                    choices: [
+                        { 
+                            text: "아야!", 
+                            nextEvent: { 
+                                description: "아, 너는 새로운 파딱?",
+                                choices: [
+                                    { 
+                                        text: "내가 언제부터 파딱이였지?", 
+                                        nextScene: "friend", 
+                                        affectionChange: { friend: 0 }
+                                    },
+                                    { 
+                                        text: "여긴 어디지?", 
+                                        nextScene: "alone", 
+                                        affectionChange: { friend: 0 } 
+                                    },
+                                ]
+                            } 
+                        },
+                        { 
+                            text: "누구세요?", 
+                            nextEvent: { 
+                                description: "지랄을한다.",
+                                choices: [
+                                    { 
+                                        text: "아니, 진짜 몰라서 그러는데...", 
+                                        nextScene: "newFriend", 
+                                        affectionChange: { friend: 0 },
+                                        nextChoices: [
+                                            {
+                                                text: "더 많은 선택지를 보고 싶어요.",
+                                                nextScene: "moreChoices",
+                                                affectionChange: { friend: 0 }
+                                            }
+                                        ]
+                                    },
+                                    { 
+                                        text: "뭔.", 
+                                        nextScene: "playAlone", 
+                                        affectionChange: { friend: 0 },
+                                        nextChoices: [
+                                            {
+                                                text: "더 많은 선택지를 보고 싶어요.",
+                                                nextScene: "moreChoices",
+                                                affectionChange: { friend: 0 } 
+                                            }
+                                        ]
+                                    } 
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        };
+
+        let affection = {
+            friend: 0
+        };
+
+        function startGame() {
+            const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD 형식으로 변환
+            const currentEvent = gameData.events.find(event => event.date === currentDate);
+            if (currentEvent) {
+                showEvent(currentEvent);
+            }
+            displayCurrentDateTime();
+            setInterval(displayCurrentDateTime, 1000); // 1초마다 현재 날짜와 시간 업데이트
+        }
+
+        function showEvent(event) {
+            document.getElementById('scene-text').textContent = event.description;
+
+            const choicesDiv = document.getElementById('choices');
+            choicesDiv.innerHTML = '';
+            event.choices.forEach(choice => {
+                const button = document.createElement('button');
+                button.textContent = choice.text;
+                button.onclick = () => {
+                    updateAffection(choice.affectionChange);
+                    if (choice.nextScene) {
+                        showScene(choice.nextScene);
+                    } else if (choice.nextEvent) {
+                        showEvent(choice.nextEvent);
+                    }
+                };
+                choicesDiv.appendChild(button);
+            });
+        }
+
+        function updateAffection(affectionChange) {
+            for (const character in affectionChange) {
+                affection[character] += affectionChange[character];
+            }
+            document.getElementById('affection').textContent = `호감도 - 친구: ${affection.friend}`;
+        }
+
+        function displayCurrentDateTime() {
+            const now = new Date();
+            const formattedDateTime = now.toLocaleString('ko-KR', {
+                dateStyle: 'full',
+                timeStyle: 'medium'
+            });
+            document.getElementById('current-date-time').textContent = formattedDateTime;
+        }
+
+        startGame();
+    </script>
+</body>
+</html>
